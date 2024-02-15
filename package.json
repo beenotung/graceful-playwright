@@ -45,7 +45,7 @@
     "tsc": "tsc -p .",
     "mocha": "ts-mocha core.spec.ts"
   },
-  "dependencies": {
+  "peerDependencies": {
     "playwright": "^1.41.2"
   },
   "devDependencies": {
@@ -57,6 +57,7 @@
     "express": "^4.18.2",
     "mocha": "^10.3.0",
     "npm-run-all": "^4.1.5",
+    "playwright": "^1.41.2",
     "rimraf": "^5.0.5",
     "ts-mocha": "^10.0.0",
     "ts-node": "^10.9.2",
