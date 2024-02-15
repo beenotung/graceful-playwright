@@ -39,6 +39,16 @@ export class GracefulPage {
     return this.getPage()
   }
 
+  /** @description optimized version of page.close() */
+  close: Page['close'] = async (options?: {}) => {
+    let promise = Promise.resolve(this.options.page)
+      .then(page => page?.close(options))
+      .catch(this.getOnError())
+    this.options.page = undefined
+    return promise
+  }
+
+  /** @description graceful version of page.goto() */
   async goto(
     url: string,
     /**
@@ -141,15 +151,6 @@ export class GracefulPage {
   innerText: Page['innerText'] = async (selector: string, options?: {}) => {
     let page = await this.getPage()
     return await page.innerText(selector, options)
-  }
-
-  /** @description optimized version of page.close() */
-  close: Page['close'] = async (options?: {}) => {
-    let promise = Promise.resolve(this.options.page)
-      .then(page => page?.close(options))
-      .catch(this.getOnError())
-    this.options.page = undefined
-    return promise
   }
 }
 
