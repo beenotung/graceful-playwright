@@ -58,7 +58,7 @@ export class GracefulPage {
         let message = String(error)
         let flags = {
           retry:
-            message.match(/timeout/i) || message.match(/ERR_NETWORK_CHANGED/i),
+            message.match(/timeout/i) || message.match(/ERR_NETWORK_CHANGED/),
           restart: message.match(/page crashed/i),
         }
         if (flags.retry || flags.restart) {
@@ -81,7 +81,7 @@ export class GracefulPage {
         let message = String(error)
         let flags = {
           restart: message.match(
-            /The object has been collected to prevent unbounded heap growth/i,
+            /The object has been collected to prevent unbounded heap growth/,
           ),
         }
         if (flags.restart) {

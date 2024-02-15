@@ -6,11 +6,11 @@ Gracefully handle timeout and network error with auto retry.
 
 ## Features
 
-- auto retry when `page.goto()` timeout or encountered `/ERR_NETWORK_CHANGED/i`
+- auto retry when `page.goto()` timeout or encountered `ERR_NETWORK_CHANGED`
 
 - auto restart page when `page.goto()` crashed with `/page crashed/i` error
 
-- helper method to auto retry when failed with `/The object has been collected to prevent unbounded heap growth/i` error
+- helper method to auto retry when failed with `The object has been collected to prevent unbounded heap growth` error
 
 - support restarting page from `Browser` or `BrowserContext` instance
 
