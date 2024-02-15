@@ -50,6 +50,58 @@ await page.close()
 await browser.close()
 ```
 
+## Typescript Signature
+
+```typescript
+import { Browser, BrowserContext, Page, Response } from 'playwright'
+
+export class GracefulPage {
+  constructor(
+    public options: {
+      from: Browser | BrowserContext
+      page?: Page | Promise<Page>
+      /**
+       * @default 5000 ms
+       */
+      retryInterval?: number
+      /**
+       * @default error => console.error(error)
+       */
+      onError?: (error: unknown) => void
+    },
+  )
+
+  fork(): GracefulPage
+
+  getPage(): Page | Promise<Page>
+
+  restart(options?: Parameters<Page['close']>[0]): Promise<Page>
+
+  /** @description optimized version of page.close() */
+  close: Page['close']
+
+  /** @description graceful version of page.goto() */
+  goto(
+    url: string,
+    /**
+     * @default { waitUtil: "domcontentloaded" }
+     */
+    options?: Parameters<Page['goto']>[1],
+  ): Promise<Response | null>
+
+  autoRetryWhenFailed<T>(f: () => T | Promise<T>): Promise<T>
+
+  /** @description proxy method to (await this.getPage())[method] */
+  evaluate: Page['evaluate']
+  fill: Page['fill']
+  click: Page['click']
+  content: Page['content']
+  title: Page['title']
+  innerHTML: Page['innerHTML']
+  innerText: Page['innerText']
+}
+```
+
 ## License
 
 This project is licensed with [BSD-2-Clause](./LICENSE)
