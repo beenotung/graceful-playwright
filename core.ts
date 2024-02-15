@@ -122,7 +122,7 @@ export class GracefulPage {
     return await page.innerText(selector, options)
   }
 
-  /** @description proxy method to (await this.getPage()).click */
+  /** @description optimized version of page.close() */
   close: Page['close'] = async (options?: {}) => {
     let promise = Promise.resolve(this.options.page)
       .then(page => page?.close(options))
