@@ -32,7 +32,12 @@
   "bugs": {
     "url": "https://github.com/beenotung/graceful-playwright/issues"
   },
-  "main": "index.js",
+  "main": "core.js",
+  "types": "core.d.ts",
+  "files": [
+    "core.js",
+    "core.d.ts"
+  ],
   "scripts": {
     "clean": "rimraf *.js *.d.ts",
     "test": "run-p build mocha",
