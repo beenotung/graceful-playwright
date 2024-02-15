@@ -1,10 +1,18 @@
 {
   "name": "graceful-playwright",
   "version": "0.0.0",
-  "description": "",
+  "description": "Gracefully handle timeout and network error with auto retry.",
   "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "author": "Beeno Tung <aabbcc1241@yahoo.com.hk> (https://beeno-tung.surge.sh)",
+  "license": "BSD-2-Clause",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/beenotung/graceful-playwright.git"
+  },
+  "homepage": "https://github.com/beenotung/graceful-playwright#readme",
+  "bugs": {
+    "url": "https://github.com/beenotung/graceful-playwright/issues"
+  },
   "main": "index.js",
   "scripts": {
     "clean": "rimraf *.js *.d.ts",
