@@ -64,3 +64,9 @@ it('should auto retry when timeout', async () => {
   await page.goto(origin + '/make-delay', { timeout: 9 })
   expect(await page.innerText('body')).to.equals('delayed content')
 })
+
+it('should fork page', async () => {
+  let page2 = page.fork()
+  expect(await page2.getPage()).not.equals(await page.getPage())
+  await page2.close()
+})

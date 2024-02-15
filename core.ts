@@ -16,6 +16,11 @@ export class GracefulPage {
     },
   ) {}
 
+  fork() {
+    let { page, ...options } = this.options
+    return new GracefulPage(options)
+  }
+
   getRetryInterval() {
     return this.options.retryInterval || 5000
   }
