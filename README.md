@@ -10,6 +10,8 @@ Gracefully handle timeout and network error with auto retry.
 
 - auto restart page when `page.goto()` crashed with `/page crashed/i` error
 
+- helper method to auto retry when failed with `/The object has been collected to prevent unbounded heap growth/i` error
+
 - support restarting page from `Browser` or `BrowserContext` instance
 
 - support wrapping existing `Page` instance
@@ -36,10 +38,12 @@ import { GracefulPage } from 'graceful-playwright'
 let browser = await chromium.launch()
 let page = new GracefulPage({ from: browser })
 
-await page.goto('http://example.net')
-let lines: string[] = await page.evaluate(() =>
-  Array.from(document.querySelectorAll('a'), a => a.href),
-)
+let lines: string[] = await page.autoRetryWhenFailed(async () => {
+  await page.goto('http://example.net')
+  return await page.evaluate(() =>
+    Array.from(document.querySelectorAll('a'), a => a.href),
+  )
+})
 console.log('lines:', lines)
 
 await page.close()

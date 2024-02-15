@@ -73,6 +73,27 @@ export class GracefulPage {
     }
   }
 
+  async autoRetryWhenFailed<T>(f: () => T | Promise<T>) {
+    for (;;) {
+      try {
+        return await f()
+      } catch (error) {
+        let message = String(error)
+        let flags = {
+          restart: message.match(
+            /The object has been collected to prevent unbounded heap growth/i,
+          ),
+        }
+        if (flags.restart) {
+          await this.restart()
+          await sleep(this.getRetryInterval())
+          continue
+        }
+        throw error
+      }
+    }
+  }
+
   /** @description proxy method to (await this.getPage()).evaluate */
   evaluate: Page['evaluate'] = async (
     pageFunction: () => unknown,
