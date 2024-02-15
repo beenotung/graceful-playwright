@@ -72,6 +72,7 @@ export class GracefulPage {
           restart: message.match(/page crashed/i),
         }
         if (flags.retry || flags.restart) {
+          this.getOnError()(error)
           if (flags.restart) {
             await this.restart()
           }
@@ -95,6 +96,7 @@ export class GracefulPage {
           ),
         }
         if (flags.restart) {
+          this.getOnError()(error)
           await this.restart()
           await sleep(this.getRetryInterval())
           continue
