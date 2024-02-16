@@ -68,8 +68,11 @@ export class GracefulPage {
         let message = String(error)
         let flags = {
           retry:
-            message.match(/timeout/i) || message.match(/ERR_NETWORK_CHANGED/),
-          restart: message.match(/page crashed/i),
+            // e.g. 'Timeout 30000ms exceeded'
+            /Timeout [\w]+ exceeded/.test(message) ||
+            message.includes('ERR_NETWORK_CHANGED') ||
+            message.includes('ERR_ABORTED'),
+          restart: /page crashed/i.test(message),
         }
         if (flags.retry || flags.restart) {
           this.getOnError()(error)
