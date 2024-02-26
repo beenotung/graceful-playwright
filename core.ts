@@ -72,6 +72,7 @@ export class GracefulPage {
             /Timeout [\w]+ exceeded/.test(message) ||
             message.includes('ERR_NETWORK_CHANGED') ||
             message.includes('ERR_CONNECTION_RESET') ||
+            message.includes('ERR_SOCKET_NOT_CONNECTED') ||
             message.includes('ERR_ABORTED'),
           restart: /page crashed/i.test(message),
         }
