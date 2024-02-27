@@ -66,8 +66,12 @@ export class GracefulPage {
         return response
       } catch (error) {
         let message = String(error)
+        let urlStr = JSON.stringify(url)
         let flags = {
           retry:
+            message.includes(
+              `Navigation to ${urlStr} is interrupted by another navigation to ${urlStr}`,
+            ) ||
             // e.g. 'Timeout 30000ms exceeded'
             /Timeout [\w]+ exceeded/.test(message) ||
             message.includes('ERR_NETWORK_CHANGED') ||
