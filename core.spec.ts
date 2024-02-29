@@ -3,6 +3,7 @@ import { Server } from 'http'
 import { Browser, chromium } from 'playwright'
 import { GracefulPage } from './core'
 import { expect } from 'chai'
+import { SinonSpy, fake } from 'sinon'
 
 let server: Server
 let origin: string
@@ -37,11 +38,14 @@ after(done => {
 
 let browser: Browser
 let page: GracefulPage
+let onError: SinonSpy
 before(async () => {
   browser = await chromium.launch()
+  onError = fake()
   page = new GracefulPage({
     from: browser,
     retryInterval: 50,
+    onError,
   })
 })
 after(async () => {
@@ -63,6 +67,7 @@ it('should auto retry when timeout', async () => {
   }, 30)
   await page.goto(origin + '/make-delay', { timeout: 9 })
   expect(await page.innerText('body')).to.equals('delayed content')
+  expect(onError.callCount).to.greaterThanOrEqual(1)
 })
 
 it('should fork page', async () => {
