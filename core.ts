@@ -67,24 +67,20 @@ export class GracefulPage {
       } catch (error) {
         let message = String(error)
         let urlStr = JSON.stringify(url)
-        let flags = {
-          retry:
-            message.includes(
-              `Navigation to ${urlStr} is interrupted by another navigation to ${urlStr}`,
-            ) ||
-            // e.g. 'Timeout 30000ms exceeded'
-            /Timeout [\w]+ exceeded/.test(message) ||
-            message.includes('ERR_NETWORK_CHANGED') ||
-            message.includes('ERR_CONNECTION_RESET') ||
-            message.includes('ERR_SOCKET_NOT_CONNECTED') ||
-            message.includes('ERR_ABORTED'),
-          restart: /page crashed/i.test(message),
-        }
-        if (flags.retry || flags.restart) {
+        let isKnownError =
+          message.includes(
+            `Navigation to ${urlStr} is interrupted by another navigation to ${urlStr}`,
+          ) ||
+          // e.g. 'Timeout 30000ms exceeded'
+          /Timeout [\w]+ exceeded/.test(message) ||
+          message.includes('ERR_NETWORK_CHANGED') ||
+          message.includes('ERR_CONNECTION_RESET') ||
+          message.includes('ERR_SOCKET_NOT_CONNECTED') ||
+          message.includes('ERR_ABORTED') ||
+          /page crashed/i.test(message)
+        if (isKnownError) {
           this.getOnError()(error)
-          if (flags.restart) {
-            await this.restart()
-          }
+          await this.restart()
           await sleep(this.getRetryInterval())
           continue
         }
