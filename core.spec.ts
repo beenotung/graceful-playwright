@@ -75,3 +75,38 @@ it('should fork page', async () => {
   expect(await page2.getPage()).not.equals(await page.getPage())
   await page2.close()
 })
+
+function preservePort() {
+  return new Promise<number>((resolve, reject) => {
+    let app = express()
+    let server = app.listen(() => {
+      let address = server.address()
+      server.close(err => {
+        if (err) {
+          reject(err)
+          return
+        }
+        if (!address || typeof address != 'object') {
+          reject('failed to get server port')
+        } else {
+          resolve(address.port)
+        }
+      })
+    })
+  })
+}
+
+it('should throw error if the server domain cannot be resolved', async () => {
+  let error = await page
+    .goto('http://this-host.not-exist')
+    .catch(error => error)
+  expect(error).instanceOf(Error)
+  expect(error.message).match(/ERR_NAME_NOT_RESOLVED/)
+})
+
+it('should throw error if the server is down', async () => {
+  let port = await preservePort()
+  let error = await page.goto('http://127.0.0.1:' + port).catch(error => error)
+  expect(error).instanceOf(Error)
+  expect(error.message).match(/ERR_CONNECTION_REFUSED/)
+})
