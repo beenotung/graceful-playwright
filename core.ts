@@ -26,7 +26,13 @@ export class GracefulPage {
   }
 
   getOnError() {
-    return this.options.onError || ((error: unknown) => console.error(error))
+    return (
+      this.options.onError ||
+      ((error: unknown) => {
+        console.error()
+        console.error(error)
+      })
+    )
   }
 
   getPage(): Page | Promise<Page> {
