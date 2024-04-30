@@ -84,6 +84,7 @@ export class GracefulPage {
           message.includes('ERR_SOCKET_NOT_CONNECTED') ||
           message.includes('ERR_ABORTED') ||
           message.includes('ERR_ADDRESS_UNREACHABLE') ||
+          message.includes('ERR_NETWORK_IO_SUSPENDED') ||
           /page crashed/i.test(message)
         if (isKnownError) {
           this.getOnError()(error)
