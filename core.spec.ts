@@ -102,7 +102,7 @@ it('should throw error if the server domain cannot be resolved', async () => {
     .catch(error => error)
   expect(error).instanceOf(Error)
   expect(error.message).match(/ERR_NAME_NOT_RESOLVED/)
-})
+}).timeout(1000 * 10)
 
 it('should throw error if the server is down', async () => {
   let port = await preservePort()
