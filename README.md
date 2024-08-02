@@ -93,6 +93,7 @@ export class GracefulPage {
 
   /** @description proxy method to (await this.getPage())[method] */
   evaluate: Page['evaluate']
+  waitForSelector: Page['waitForSelector']
   fill: Page['fill']
   click: Page['click']
   content: Page['content']

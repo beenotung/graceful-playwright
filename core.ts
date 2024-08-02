@@ -128,6 +128,15 @@ export class GracefulPage {
     return await page.evaluate(pageFunction, arg)
   }
 
+  /** @description proxy method to (await this.getPage()).waitForSelector */
+  waitForSelector: Page['waitForSelector'] = async (
+    selector: string,
+    options?: {},
+  ) => {
+    let page = await this.getPage()
+    return await page.waitForSelector(selector, options)
+  }
+
   /** @description proxy method to (await this.getPage()).fill */
   fill: Page['fill'] = async (
     selector: string,
