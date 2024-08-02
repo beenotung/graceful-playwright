@@ -59,13 +59,13 @@ it('should goto normal page', async () => {
 })
 
 it('should auto retry when timeout', async () => {
-  await page.goto(origin + '/set-delay?ms=20')
+  await page.goto(origin + '/set-delay?ms=200')
   expect(await page.innerText('body')).to.equals('updated delay interval')
 
   setTimeout(() => {
-    page.goto(origin + '/set-delay?ms=2')
-  }, 30)
-  await page.goto(origin + '/make-delay', { timeout: 10 })
+    page.goto(origin + '/set-delay?ms=20')
+  }, 300)
+  await page.goto(origin + '/make-delay', { timeout: 100 })
   expect(await page.innerText('body')).to.equals('delayed content')
   expect(onError.callCount).to.greaterThanOrEqual(1)
 })
