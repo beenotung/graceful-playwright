@@ -69,6 +69,24 @@ export class GracefulPage {
           waitUntil: 'domcontentloaded',
           ...options,
         })
+        if (response && response.status() === 429) {
+          let retryAfter = await response.headerValue('Retry-After')
+          if (retryAfter && +retryAfter) {
+            // e.g. 120 (seconds)
+            await sleep(+retryAfter * 1000)
+            continue
+          } else if (retryAfter && new Date(retryAfter).getTime()) {
+            // e.g. "Wed, 21 Oct 2015 07:28:00 GMT"
+            let target = new Date(retryAfter).getTime()
+            let now = Date.now()
+            let diff = target - now
+            await sleep(diff)
+            continue
+          } else {
+            let statusText = response.statusText() || 'Too Many Requests'
+            throw new Error(statusText)
+          }
+        }
         return response
       } catch (error) {
         let message = String(error)
