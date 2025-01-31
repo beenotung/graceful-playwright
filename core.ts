@@ -70,22 +70,14 @@ export class GracefulPage {
           ...options,
         })
         if (response && response.status() === 429) {
-          let retryAfter = await response.headerValue('Retry-After')
-          if (retryAfter && +retryAfter) {
-            // e.g. 120 (seconds)
-            await sleep(+retryAfter * 1000)
+          let headerValue = await response.headerValue('Retry-After')
+          let interval = parseRetryAfter(headerValue)
+          if (interval) {
+            await sleep(interval)
             continue
-          } else if (retryAfter && new Date(retryAfter).getTime()) {
-            // e.g. "Wed, 21 Oct 2015 07:28:00 GMT"
-            let target = new Date(retryAfter).getTime()
-            let now = Date.now()
-            let diff = target - now
-            await sleep(diff)
-            continue
-          } else {
-            let statusText = response.statusText() || 'Too Many Requests'
-            throw new Error(statusText)
           }
+          let statusText = response.statusText() || 'Too Many Requests'
+          throw new Error(statusText)
         }
         return response
       } catch (error) {
@@ -198,4 +190,23 @@ export class GracefulPage {
 
 function sleep(ms: number) {
   return new Promise(resolve => setTimeout(resolve, ms))
+}
+
+export function parseRetryAfter(headerValue: string | null): number | null {
+  if (!headerValue) return null
+
+  // e.g. 120 (seconds)
+  let seconds = +headerValue
+  if (seconds) {
+    return seconds * 1000
+  }
+
+  // e.g. "Wed, 21 Oct 2015 07:28:00 GMT"
+  let target = new Date(headerValue).getTime()
+  if (target) {
+    let diff = target - Date.now()
+    return diff
+  }
+
+  return null
 }
