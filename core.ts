@@ -54,7 +54,10 @@ export class GracefulPage {
     return promise
   }
 
-  /** @description graceful version of page.goto() */
+  /**
+   * @description graceful version of page.goto()
+   * @throws GotoError with response details when got 429 Too Many Requests without retry-after header
+   */
   async goto(
     url: string,
     /**
@@ -77,7 +80,7 @@ export class GracefulPage {
             continue
           }
           let statusText = response.statusText() || 'Too Many Requests'
-          throw new Error(statusText)
+          throw new GotoError(statusText, { url, options, response })
         }
         return response
       } catch (error) {
@@ -185,6 +188,17 @@ export class GracefulPage {
   innerText: Page['innerText'] = async (selector: string, options?: {}) => {
     let page = await this.getPage()
     return await page.innerText(selector, options)
+  }
+}
+
+export type GotoErrorDetails = {
+  url: string
+  options?: Parameters<Page['goto']>[1]
+  response: Awaited<ReturnType<Page['goto']>>
+}
+export class GotoError extends Error {
+  constructor(message: string, public details: GotoErrorDetails) {
+    super(message)
   }
 }
 

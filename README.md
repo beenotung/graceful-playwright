@@ -52,6 +52,8 @@ await browser.close()
 
 ## Typescript Signature
 
+Main Class: `GracefulPage`
+
 ```typescript
 import { Browser, BrowserContext, Page, Response } from 'playwright'
 
@@ -80,7 +82,10 @@ export class GracefulPage {
   /** @description optimized version of page.close() */
   close: Page['close']
 
-  /** @description graceful version of page.goto() */
+  /**
+   * @description graceful version of page.goto()
+   * @throws GotoError with response details when got 429 Too Many Requests without retry-after header
+   */
   goto(
     url: string,
     /**
@@ -100,6 +105,20 @@ export class GracefulPage {
   title: Page['title']
   innerHTML: Page['innerHTML']
   innerText: Page['innerText']
+}
+```
+
+Error Class: `GotoError`
+
+```typescript
+export class GotoError extends Error {
+  constructor(message: string, public details: GotoErrorDetails)
+}
+
+export type GotoErrorDetails = {
+  url: string
+  options?: Parameters<Page['goto']>[1]
+  response: Awaited<ReturnType<Page['goto']>>
 }
 ```
 
