@@ -1,6 +1,6 @@
 {
   "name": "graceful-playwright",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "description": "Gracefully handle timeout and network error with auto retry.",
   "keywords": [
     "graceful",
