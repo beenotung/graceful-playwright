@@ -1,5 +1,28 @@
 import { Browser, BrowserContext, Page } from 'playwright'
 
+/** can be used in args by `chromium.launch()` and `chromium.launchPersistentContext()` */
+export function getStealthChromiumArgs(
+  options: {
+    noSandbox?: boolean
+    /** default is a version of Mac OS */
+    userAgent?: string
+  } = {},
+): string[] {
+  let userAgent =
+    options.userAgent ||
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/101.0.4951.67 Safari/537.36'
+  let args: string[] = []
+  if (options.noSandbox) {
+    args.push('--no-sandbox', '--disable-setuid-sandbox')
+  }
+  args.push(
+    '--disable-dev-shm-usage',
+    `--user-agent=${userAgent}`,
+    '--disable-blink-features=AutomationControlled',
+  )
+  return args
+}
+
 export class GracefulPage {
   constructor(
     public options: {
@@ -198,7 +221,10 @@ export type GotoErrorDetails = {
   response: Awaited<ReturnType<Page['goto']>>
 }
 export class GotoError extends Error {
-  constructor(message: string, public details: GotoErrorDetails) {
+  constructor(
+    message: string,
+    public details: GotoErrorDetails,
+  ) {
     super(message)
   }
 }

@@ -122,6 +122,24 @@ export type GotoErrorDetails = {
 }
 ```
 
+Helper Function: `getStealthChromiumArgs`
+
+```typescript
+export function getStealthChromiumArgs(options: {
+  noSandbox?: boolean
+  /** default is a version of Mac OS */
+  userAgent?: string
+}): string[]
+```
+
+It returns list of arguments that can be used in `chromium.launch()` and `chromium.launchPersistentContext()`:
+
+- `--no-sandbox` (conditionally)
+- `--disable-setuid-sandbox` (conditionally)
+- `--disable-dev-shm-usage`
+- `--user-agent=${userAgent}`
+- `--disable-blink-features=AutomationControlled`
+
 ## License
 
 This project is licensed with [BSD-2-Clause](./LICENSE)
