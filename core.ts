@@ -229,8 +229,34 @@ export class GotoError extends Error {
   }
 }
 
-function sleep(ms: number) {
+export function sleep(
+  ms: number,
+  options?: { extraRandom?: number | false | true },
+) {
+  if (options?.extraRandom) {
+    let extraRandom =
+      typeof options.extraRandom === 'number' ? options.extraRandom : ms
+    ms += Math.random() * extraRandom
+  }
   return new Promise(resolve => setTimeout(resolve, ms))
+}
+
+export async function sleepUntil(
+  conditionFn: () => boolean | Promise<boolean>,
+  options?: { interval?: number; timeout?: number; extraRandom?: number },
+) {
+  let sleepOptions =
+    options && 'extraRandom' in options
+      ? { extraRandom: options.extraRandom }
+      : undefined
+  let interval = options?.interval || 1000 / 30 // 30 fps
+  let timeout = options?.timeout || 30_000 // 30 seconds
+  let endTime = Date.now() + timeout
+  while (Date.now() < endTime) {
+    if (await conditionFn()) return
+    await sleep(interval, sleepOptions)
+  }
+  throw new Error('Timeout')
 }
 
 export function parseRetryAfter(headerValue: string | null): number | null {

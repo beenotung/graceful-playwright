@@ -140,6 +140,31 @@ It returns list of arguments that can be used in `chromium.launch()` and `chromi
 - `--user-agent=${userAgent}`
 - `--disable-blink-features=AutomationControlled`
 
+Helper Functions: `sleep` and `sleepUntil`
+
+```typescript
+/**
+ * Resolves after the given number of milliseconds.
+ * @param options.extraRandom when true, adds up to `ms` of random jitter;
+ *   when a number, adds up to that many ms of jitter; default off
+ */
+export function sleep(
+  ms: number,
+  options?: { extraRandom?: number | false | true },
+): Promise<void>
+
+/**
+ * Polls `conditionFn` until it returns true, or throws on timeout.
+ * @param options.interval polling interval in ms (default: ~33ms, 30 fps)
+ * @param options.timeout overall timeout in ms (default: 30000)
+ * @param options.extraRandom passed to each `sleep(interval)` poll wait
+ */
+export function sleepUntil(
+  conditionFn: () => boolean | Promise<boolean>,
+  options?: { interval?: number; timeout?: number; extraRandom?: number },
+): Promise<void>
+```
+
 ## License
 
 This project is licensed with [BSD-2-Clause](./LICENSE)
