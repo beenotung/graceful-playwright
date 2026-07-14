@@ -1,26 +1,164 @@
-import { Browser, BrowserContext, Page } from 'playwright'
+import { execSync } from 'child_process'
+import { Browser, BrowserContext, chromium, Page } from 'playwright'
+
+let cachedChromiumMajorVersion: string | undefined
+
+/** read from bundled chromium via `chrome --product-version` */
+function getChromiumMajorVersion(): string {
+  if (!cachedChromiumMajorVersion) {
+    let output = execSync(`"${chromium.executablePath()}" --product-version`, {
+      encoding: 'utf8',
+    }).trim()
+    cachedChromiumMajorVersion = output.match(/^(\d+)/)?.[1] ?? '120'
+  }
+  return cachedChromiumMajorVersion
+}
+
+function getPlatformToken(): string {
+  if (process.platform === 'darwin') {
+    return 'Macintosh; Intel Mac OS X 10_15_7'
+  }
+  if (process.platform === 'win32') {
+    return 'Windows NT 10.0; Win64; x64'
+  }
+  let arch = process.arch === 'arm64' ? 'aarch64' : 'x86_64'
+  return `X11; Linux ${arch}`
+}
+
+/** build a non-HeadlessChrome user agent without launching a browser */
+export function getStealthUserAgent(): string {
+  let major = getChromiumMajorVersion()
+  let platform = getPlatformToken()
+  return `Mozilla/5.0 (${platform}) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${major}.0.0.0 Safari/537.36`
+}
 
 /** can be used in args by `chromium.launch()` and `chromium.launchPersistentContext()` */
 export function getStealthChromiumArgs(
   options: {
     noSandbox?: boolean
-    /** default is a version of Mac OS */
+    /** @default getStealthUserAgent() */
     userAgent?: string
   } = {},
 ): string[] {
-  let userAgent =
-    options.userAgent ||
-    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/101.0.4951.67 Safari/537.36'
   let args: string[] = []
+
   if (options.noSandbox) {
     args.push('--no-sandbox', '--disable-setuid-sandbox')
   }
+
   args.push(
     '--disable-dev-shm-usage',
-    `--user-agent=${userAgent}`,
     '--disable-blink-features=AutomationControlled',
   )
+
+  let userAgent = options.userAgent || getStealthUserAgent()
+  args.push(`--user-agent=${userAgent}`)
+
   return args
+}
+
+/** run via `context.addInitScript(stealthChromeInitScript)` */
+export function stealthChromeInitScript() {
+  let win = window as any
+  win.chrome = win.chrome || {}
+  let chrome = win.chrome as {
+    app?: unknown
+    loadTimes?: () => unknown
+    csi?: () => unknown
+  }
+
+  function getNavigationTiming() {
+    let navigation = performance.getEntriesByType('navigation')[0] as
+      | PerformanceNavigationTiming
+      | undefined
+    if (navigation) {
+      let timeOrigin = performance.timeOrigin
+      let domContentLoadedEventEnd =
+        navigation.domContentLoadedEventEnd ||
+        navigation.domContentLoadedEventStart ||
+        0
+      let loadEventEnd =
+        navigation.loadEventEnd || domContentLoadedEventEnd || 0
+      let responseStart = navigation.responseStart || 0
+      return {
+        navigationStartMs: timeOrigin,
+        navigationStartSec: timeOrigin / 1000,
+        domContentLoadedMs: timeOrigin + domContentLoadedEventEnd,
+        domContentLoadedSec: (timeOrigin + domContentLoadedEventEnd) / 1000,
+        loadEventEndMs: timeOrigin + loadEventEnd,
+        loadEventEndSec: (timeOrigin + loadEventEnd) / 1000,
+        responseStartSec: (timeOrigin + responseStart) / 1000,
+        protocol: navigation.nextHopProtocol || 'http/1.1',
+      }
+    }
+
+    // fallback for very early init script execution
+    let timing = performance.timing
+    let navigationStartMs = timing.navigationStart
+    let domContentLoadedMs =
+      timing.domContentLoadedEventEnd || navigationStartMs
+    let loadEventEndMs =
+      timing.loadEventEnd ||
+      timing.domContentLoadedEventEnd ||
+      navigationStartMs
+    return {
+      navigationStartMs,
+      navigationStartSec: navigationStartMs / 1000,
+      domContentLoadedMs,
+      domContentLoadedSec: domContentLoadedMs / 1000,
+      loadEventEndMs,
+      loadEventEndSec: loadEventEndMs / 1000,
+      responseStartSec: timing.responseStart / 1000,
+      protocol: 'http/1.1',
+    }
+  }
+
+  chrome.app ||= {
+    isInstalled: false,
+    InstallState: {
+      DISABLED: 'disabled',
+      INSTALLED: 'installed',
+      NOT_INSTALLED: 'not_installed',
+    },
+    RunningState: {
+      CANNOT_RUN: 'cannot_run',
+      READY_TO_RUN: 'ready_to_run',
+      RUNNING: 'running',
+    },
+  }
+
+  chrome.loadTimes ||= () => {
+    let timing = getNavigationTiming()
+    let protocol = timing.protocol
+    let usesHttp2Or3 = protocol === 'h2' || protocol === 'h3'
+    return {
+      requestTime: timing.navigationStartSec,
+      startLoadTime: timing.navigationStartSec,
+      commitLoadTime: timing.domContentLoadedSec,
+      finishDocumentLoadTime: timing.domContentLoadedSec,
+      finishLoadTime: timing.loadEventEndSec,
+      firstPaintTime: timing.responseStartSec,
+      firstPaintAfterLoadTime: 0,
+      navigationType: 'Other',
+      wasFetchedViaSpdy: usesHttp2Or3,
+      wasNpnNegotiated: usesHttp2Or3,
+      npnNegotiatedProtocol: usesHttp2Or3 ? protocol : 'unknown',
+      wasAlternateProtocolAvailable: false,
+      connectionInfo: protocol,
+    }
+  }
+
+  chrome.csi ||= () => {
+    let timing = getNavigationTiming()
+    let startE = timing.navigationStartMs
+    let onloadT = timing.domContentLoadedMs || startE
+    return {
+      startE,
+      onloadT,
+      pageT: performance.now(),
+      tran: 15,
+    }
+  }
 }
 
 export class GracefulPage {

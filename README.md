@@ -20,6 +20,8 @@ Gracefully handle timeout and network error with auto retry.
 
 - create `Page` instance lazily (on-demand)
 
+- stealth helpers to reduce common Playwright automation signals (`navigator.webdriver`, `HeadlessChrome` user agent, missing `window.chrome`)
+
 ## Installation
 
 ```bash
@@ -33,6 +35,7 @@ You can install the package with yarn, pnpm or slnpm as well.
 More usage examples see: [example.ts](./example.ts) and [core.spec.ts](./core.spec.ts)
 
 ```typescript
+import { chromium } from 'playwright'
 import { GracefulPage } from 'graceful-playwright'
 
 let browser = await chromium.launch()
@@ -122,23 +125,65 @@ export type GotoErrorDetails = {
 }
 ```
 
-Helper Function: `getStealthChromiumArgs`
+Stealth Helpers
 
 ```typescript
-export function getStealthChromiumArgs(options: {
+/** build a non-HeadlessChrome user agent from bundled chromium version */
+export function getStealthUserAgent(): string
+
+/** launch args for chromium.launch() and chromium.launchPersistentContext() */
+export function getStealthChromiumArgs(options?: {
+  /** opt in for Docker/CI/root; sandbox is enabled by default */
   noSandbox?: boolean
-  /** default is a version of Mac OS */
+  /** @default getStealthUserAgent() */
   userAgent?: string
 }): string[]
+
+/** pass to context.addInitScript(stealthChromeInitScript) */
+export function stealthChromeInitScript(): void
 ```
 
-It returns list of arguments that can be used in `chromium.launch()` and `chromium.launchPersistentContext()`:
+`getStealthChromiumArgs()` returns:
 
-- `--no-sandbox` (conditionally)
-- `--disable-setuid-sandbox` (conditionally)
+- `--no-sandbox` (only when `noSandbox: true`)
+- `--disable-setuid-sandbox` (only when `noSandbox: true`)
 - `--disable-dev-shm-usage`
-- `--user-agent=${userAgent}`
+- `--user-agent=...` (from `options.userAgent` or `getStealthUserAgent()`)
 - `--disable-blink-features=AutomationControlled`
+
+`getStealthUserAgent()` builds a `Chrome/${major}.0.0.0` user agent from the bundled chromium binary (`chrome --product-version`) without launching a browser.
+
+`stealthChromeInitScript` patches missing `window.chrome` fields (`app`, `loadTimes`, `csi`) before page scripts run. Pass the function reference to `addInitScript` — do not call it yourself.
+
+Example (see also [example.ts](./example.ts)):
+
+```typescript
+import { chromium } from 'playwright'
+import {
+  getStealthChromiumArgs,
+  stealthChromeInitScript,
+  GracefulPage,
+} from 'graceful-playwright'
+
+let context = await chromium.launchPersistentContext('.chromium', {
+  args: getStealthChromiumArgs(),
+  // channel: 'chromium', // optional: new headless mode (full chromium engine)
+  // channel: 'chrome', // optional: installed Google Chrome
+  // headless: false,
+})
+await context.addInitScript(stealthChromeInitScript)
+let page = new GracefulPage({ from: context })
+
+await page.goto('https://example.net')
+await context.close()
+```
+
+Notes:
+
+- use `noSandbox: true` only in Docker, CI, or when running as root
+- use `channel: 'chromium'` for new headless mode — closer to real Chrome than the default headless shell
+- use `channel: 'chrome'` when you need installed Google Chrome locally (e.g. codecs, `window.chrome`)
+- default (no `channel`) uses bundled headless shell — best for CI; add `stealthChromeInitScript` if sites check `window.chrome`
 
 Helper Functions: `sleep` and `sleepUntil`
 

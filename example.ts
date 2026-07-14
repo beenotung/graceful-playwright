@@ -1,9 +1,19 @@
 import { chromium } from 'playwright'
-import { GracefulPage } from './core'
+import {
+  getStealthChromiumArgs,
+  stealthChromeInitScript,
+  GracefulPage,
+} from './core'
 
 async function main() {
-  let browser = await chromium.launch()
-  let page = new GracefulPage({ from: browser })
+  let userDataDir = '.chromium'
+  let context = await chromium.launchPersistentContext(userDataDir, {
+    args: getStealthChromiumArgs(),
+    // channel: 'chromium',
+    // headless: false,
+  })
+  await context.addInitScript(stealthChromeInitScript)
+  let page = new GracefulPage({ from: context })
 
   let lines: string[] = await page.autoRetryWhenFailed(async () => {
     await page.goto('http://example.net')
@@ -14,6 +24,6 @@ async function main() {
   console.log('lines:', lines)
 
   await page.close()
-  await browser.close()
+  await context.close()
 }
 main().catch(e => console.error(e))
